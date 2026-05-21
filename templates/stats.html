@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Stats</title>
+        <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/static/sw.js");
+    }
+    </script>
+    <style>
+        body {
+            background: black;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: center;
+        }
+
+        th {
+            color: #ccc;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+
+        td {
+            border-bottom: 1px solid #222;
+        }
+
+        .stats-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #0e0e0e;
+    border-radius: 18px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+}
+
+.stats-container h1 {
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: linear-gradient(145deg, #111, #000);
+    padding: 25px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255,255,255,0.05);
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card h2 {
+    font-size: 2.6rem;
+    margin: 10px 0;
+    color: #fff;
+}
+
+.stat-card p {
+    font-size: 14px;
+    color: #aaa;
+    letter-spacing: 0.5px;
+}
+.stats-table {
+    margin-top: 40px;
+    background: #111;
+    padding: 20px;
+    border-radius: 16px;
+}
+
+.win {
+    color: #3ad46f;
+    font-weight: bold;
+}
+
+.loss {
+    color: #ff4d4d;
+    font-weight: bold;
+}
+
+.easy {
+    color: #4caf50;
+}
+
+.medium {
+    color: #ffb300;
+}
+
+.hard {
+    color: #ff5252;
+}
+
+.back-btn {
+    margin-top: 30px;
+    display: inline-block;
+    padding: 10px 18px;
+    background: #fff;
+    color: #000;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: 0.2s ease;
+}
+
+.back-btn:hover {
+    background: #ddd;
+}
+
+.chart-container {
+    margin-top: 40px;
+    background: #111;
+    padding: 20px;
+    border-radius: 16px;
+    height: 350px;
+}
+
+    </style>
+</head>
+<body>
+<div class="stats-container">
+
+    <h1>Your Stats</h1>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <p>Total Games</p>
+            <h2>{{ overview['total_games'] }}</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Total Wins</p>
+            <h2>{{ overview['wins'] or 0 }}</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Best Time</p>
+
+            {% if overview['best_time'] %}
+                <h2>
+                    {{ overview['best_time'] // 60 }}:
+                    {{ "%02d"|format(overview['best_time'] % 60) }}
+                </h2>
+            {% else %}
+                <h2>00:00</h2>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="stats-table">
+    {% if stats|length == 0 %}
+        <p style="color:#aaa; text-align:center;">No games played yet.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Difficulty</th>
+                    <th>Best Score</th>
+                    <th>Best Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                    {% for row in stats %}
+                    <tr>
+                        <td class="{{ row['difficulty']|lower }}">
+                            {{ row['difficulty'] }}
+                        </td>
+
+                        <td>{{ row['best_score'] }}</td>
+
+                        <td>
+                            {{ (row['best_time'] // 60) }}:
+                            {{ "%02d"|format(row['best_time'] % 60) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    </div>
+
+<div class="chart-container">
+    <canvas id="timeChart"></canvas>
+</div>
+<a href="/game" class="back-btn">← Back to Game</a>
+
+<!-- SCRIPT -->
+<script>
+function logoutUser() {
+    fetch("/logout").then(() => {
+        window.location.replace("/login");
+    });
+}
+function updateScoreUI() {
+    const score = document.getElementById("score");
+    score.classList.add("update");
+    setTimeout(() => score.classList.remove("update"), 200);
+}
+const ctx = document.getElementById('timeChart');
+
+new Chart(ctx, {
+    type: 'line',
+
+    data: {
+        labels: ['Game 1', 'Game 2', 'Game 3'],
+
+        datasets: [{
+            label: 'Solve Time (sec)',
+            data: [120, 90, 150],
+            borderWidth: 3,
+            tension: 0.3
+        }]
+    },
+
+    options: {
+        responsive: true,
+
+        plugins: {
+            legend: {
+                labels: {
+                    color: 'white'
+                }
+            }
+        },
+
+        scales: {
+            x: {
+                ticks: {
+                    color: 'white'
+                },
+
+                grid: {
+                    color: '#222'
+                }
+            },
+
+            y: {
+                ticks: {
+                    color: 'white'
+                },
+
+                grid: {
+                    color: '#222'
+                }
+            }
+        }
+    }
+});
+</script>
+</div>
+</body>
+</html>

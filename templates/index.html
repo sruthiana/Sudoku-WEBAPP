@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sudoku</title>
+      <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <script>
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/static/sw.js");
+    }
+    </script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<h1>Sudoku Game</h1>
+<button onclick="window.location.href='/logout'" class="logout-btn">Logout</button>
+
+<div class="controls">
+    <label>Select Level:</label>
+    <select id="level">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+    </select>
+    <button onclick="startGame()">Start Game</button>
+</div>
+<div class="scoreboard">
+    <div>⏱ Time: <span id="timer">00:00</span></div>
+    <div>⭐ Score: <span id="score">0</span></div>
+</div>
+<div>❌ Mistakes: <span id="mistakes">0</span></div>
+
+
+<!-- THIS IS WHERE GRID APPEARS -->
+<div id="sudoku-board"></div>
+
+<div class="buttons">
+    <button onclick="checkSolution()">Check</button>
+    <button onclick="resetGame()">Reset</button>
+    <button onclick="window.location.href='/stats'">View My Stats</button>
+</div>
+
+
+<div id="resultModal" class="modal">
+  <div class="modal-content">
+      <h2>Game Over</h2>
+      <p id="resultText"></p>
+      <p>⏱ Time: <span id="finalTime"></span></p>
+      <p>⭐ Score: <span id="finalScore"></span></p>
+      <button onclick="closeModal()">Play Again</button>
+  </div>
+</div>
+
+
+<p id="message"></p>
+
+<script src="/static/script.js" defer></script>
+</body>
+</html>
